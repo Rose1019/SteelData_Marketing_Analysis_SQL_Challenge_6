@@ -219,6 +219,7 @@ WHERE Qty > (SELECT AVG(Qty) FROM transactions);
 
 /*6. What is the average revenue generated per day during the marketing campaigns?*/
 
+with daily_revenue As(
 select t.purchase_date,m.camp_id,m.camp_name,round(sum(s.price*t.Qty),0) as daily_revenue
 from marketing_camp m
 join sus_clothing s
@@ -226,52 +227,15 @@ using(p_id)
 join transactions t 
 using(p_id)
 where t.purchase_date between m.start_date AND m.end_date
-group by m.camp_id,t.purchase_date;
+group by m.camp_id,t.purchase_date
+)
 
+select camp_id,camp_name,
+       AVG(daily_revenue) as average_daily_revenue
+from  daily_revenue
+GROUP BY
+    camp_id, camp_name;      
 
-#CHAT GPT#
-
-SELECT
-    AVG(daily_revenue) AS average_daily_revenue
-FROM (
-    SELECT
-        m.camp_id,
-        m.camp_name,
-        t.purchase_date,
-        SUM(t.Qty * s.price) AS daily_revenue
-    FROM
-        marketing_camp m
-        JOIN transactions t ON m.p_id = t.p_id
-        JOIN sus_clothing s ON t.p_id = s.p_id
-    WHERE
-        t.purchase_date BETWEEN m.start_date AND m.end_date
-    GROUP BY
-        m.camp_id, t.purchase_date
-) subquery;
-
-
-With 
-		Daily_Revenue AS
-					( select t.purchase_date,m.camp_id,m.camp_name,round(sum(s.price*t.Qty),0) as daily_revenue
-					  from marketing_camp m
-					  join sus_clothing s
-                      using(p_id)
-					  join transactions t 
-					  using(p_id)
-					  where t.purchase_date between m.start_date AND m.end_date
-					  group by m.camp_id,t.purchase_date
-                      ),
-       Average_revenue AS
-						( select avg(daily_revenue) as Average_daily_revenue
-                          from Daily_Revenue
-                         )
-                         
-select t.purchase_date,
-	   m.camp_id,m.camp_name,
-       Round(daily_revenue,0) as daily_revenue,
-       Average_daily_revenue
-from Daily_Revenue JOIN Average_revenue;
-                      
 
 /*7. What is the percentage contribution of each product to the total revenue?*/
 
