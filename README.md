@@ -7,4 +7,5 @@ Analyse the following data and answer the questions to form your answer.
 ## NOTE:
 Sharing the table details and corresponding data values are present in the PDF file named:*Marketing Analysis - Readme*.  
 Questions in *Marketing Analysis-Questions*.  
-SQL Codes are present in *6Market_analysis_Code.sql*  
+SQL Codes are present in *6Market_analysis_Code.sql*   
+Link to SQL Challenge 6 : https://www.steeldata.org.uk/sql6.html
