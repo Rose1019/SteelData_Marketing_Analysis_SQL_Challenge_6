@@ -213,7 +213,8 @@ from
 
 ```
 				Output
-Output consisting of 20 rows,each presenting the total revenue alongside the corresponding percentage contribution to the overall revenue.
+Output consisting of 20 rows,each presenting the total revenue alongside
+the corresponding percentage contribution to the overall revenue.
 
                             Concepts learned
 1.WINDOWS FUNCTION- OVER()
