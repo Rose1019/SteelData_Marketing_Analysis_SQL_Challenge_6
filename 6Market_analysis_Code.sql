@@ -1,3 +1,5 @@
+/*Creating Tables and Rows*/
+
 create table sus_clothing
 (p_id int primary key,
  p_name varchar(50),
@@ -118,6 +120,7 @@ create table transactions
 (63, 19, 2, '2023-10-13'),
 (64, 20, 1, '2023-10-14');
 
+/*QUESTIONS*/
 
 /*1. How many transactions were completed during each marketing campaign?*/
 
