@@ -124,19 +124,14 @@ create table transactions
 
 /*1. How many transactions were completed during each marketing campaign?*/
 
-select m.camp_id,count(t.t_id) as Number_of_Transactions
+select m.camp_id,m.camp_name,count(t.t_id) as Number_of_Transactions
 from transactions t
 join marketing_camp m 
 using(p_id)
 where t.purchase_date between m.start_date and m.end_date
-group by m.camp_id;
+group by m.camp_id,m.camp_name;
 
 /*2. Which product had the highest sales quantity?*/
-
-select t.p_id,s.p_name,t.Qty
-from transactions t 
-join sus_clothing s 
-using(p_id);
 
 select s.p_id,s.p_name,t.total_Qty
 from sus_clothing s 
@@ -162,26 +157,7 @@ join transactions t
 using(p_id)
 group by m.camp_id,m.camp_name,m.p_id,s.price;
 
-/*WINDOWS FUNCTION*/
-select m.camp_id,m.camp_name,m.p_id,
-	   s.price,t.Qty,
-       sum(s.price*t.Qty) over(partition by m.camp_id) as revenue
-from marketing_camp m 
-join sus_clothing s 
-using(p_id)
-join transactions t
-using(p_id);       
-
 /*4. What is the top-selling product category based on the total revenue generated?*/
-
-/*revenue for each and every category*/
-select  s.category,round(sum(s.price*t.Qty),0) as total_revenue
-from sus_clothing s
-join transactions t 
-using(p_id)
-group by s.category
-order by total_revenue desc
-;
 
 select  s.category,round(sum(s.price*t.Qty),0) as total_revenue
 from sus_clothing s
@@ -191,34 +167,12 @@ group by s.category
 order by total_revenue desc
 limit 1;
 
-/*with cte1 as
-          ( select *,
-            row_number () over(partition by category order by(sum(s.price*t.Qty))) as revenue_rn,
-            rank() over(partition by category order by(sum(s.price*t.Qty))) as revenue_rnk,
-            dense_rank() over(partition by category order by(sum(s.price*t.Qty))) as revenue_drnk
-		from sus_clothing s
-		join transactions t 
-		using(p_id)
-        )*/
-            
-
 /*5. Which products had a higher quantity sold compared to the average quantity sold?*/
 
-select p_id,avg(Qty)
-from transactions
-group by p_id
-order by avg(Qty) desc;
-
-select p_id
-from transactions
-where Qty > All( Select avg(Qty)
-			  from transactions
-              );
-
-SELECT p_id
-FROM transactions
-WHERE Qty > (SELECT AVG(Qty) FROM transactions);
-
+SELECT t.p_id, SUM(t.Qty) AS total_quantity_sold, AVG(t.Qty) AS average_quantity_sold
+FROM Transactions t
+GROUP BY t.p_id
+HAVING SUM(t.Qty) > AVG(t.Qty);
 
 /*6. What is the average revenue generated per day during the marketing campaigns?*/
 
@@ -242,40 +196,6 @@ GROUP BY
 
 /*7. What is the percentage contribution of each product to the total revenue?*/
 
-/*revenue for each and every product*/
-select  s.p_id,s.p_name,
-		round(sum(s.price*t.Qty),0) as total_revenue_for_each_PDT
-from sus_clothing s
-join transactions t 
-using(p_id)
-group by s.p_name,s.p_id
-/*order by total_revenue desc*/
-;
-
-/*Total revenue*/
-select  round(sum(s.price*t.Qty),0) as total_revenue
-from sus_clothing s
-join transactions t 
-using(p_id)
-order by total_revenue desc;
-
- /*to get the total quantity for each product*/
- select p_id,sum(Qty) as total_Qty
-        from transactions t
-        group by p_id
-        order by sum(Qty) desc;
-        
- /*totql Quantity for each campaingn*/  
-  select m.camp_id,m.camp_name,
-		 t.p_id,sum(t.Qty) as total_Qty,
-         round(avg(t.Qty),2) as Avg_Qty
-        from transactions t
-        join marketing_camp m 
-        using(p_id)
-        group by t.p_id,m.camp_id,m.camp_name
-        order by sum(t.Qty) desc;
- 
- 
  /*the percentage contribution of each product to the total revenue*/
 with Revenue AS
 		   (
@@ -293,61 +213,48 @@ select *,
 	   round((total_revenue_for_each_PDT *100)/sum(total_revenue_for_each_PDT) over (),2) as PCT
 from 
 		Revenue;       
-    
+
+
 /*8. Compare the average quantity sold during marketing campaigns to outside the marketing campaigns*/
 
-/*Average quantity sold during marketing campaigns*/
-						select
-								m.camp_id,m.camp_name,round(avg(t.Qty),2) as Average_QTY_During_Campaigns
-						from
-								transactions t 
-								join marketing_camp m 
-								using (p_id)
-						group by
-								
-								m.camp_id,
-								m.camp_name;
-/*Comparing Average quantity sold during marketing campaigns with the outside market campaigns*/
+WITH MarketingAvg AS (
+    SELECT AVG(t.Qty) AS avg_quantity_sold
+    FROM transactions t
+    JOIN marketing_camp mc ON t.p_id = mc.p_id
+)
 
-WITH CampaignQty AS
-				( select
-								t.p_id,m.camp_id,
-                                round(avg(t.Qty),2) as AVG_Qty_Campaigns
-						from
-								transactions t 
-								join marketing_camp m 
-								using (p_id)
-                        where
-								t.purchase_date between m.start_date AND m.end_date
-						group by
-								t.p_id,m.camp_id
-                   ),
-	NonCampaignQty AS 
-				(  	   select
-								t.p_id,m.camp_id,
-                                round(avg(t.Qty),2) as AVG_Qty_NonCampaigns
-						from
-								transactions t 
-								LEFT join marketing_camp m 
-								using (p_id)
-                       
-                       where 
-							m.camp_id IS NULL
-                       
-                       group by 
-                             t.p_id,m.camp_id
-                    )
-                    
-select 
-        m.camp_id,c.p_id,
-        c.AVG_Qty_Campaigns,
-        n.AVG_Qty_NonCampaigns
-from CampaignQty c 
-LEFT join NonCampaignQty n
-using(p_id)
-join marketing_camp m using(p_id);     
+, NonMarketingAvg AS (
+    SELECT AVG(t.Qty) AS avg_quantity_sold
+    FROM transactions t
+    WHERE t.p_id NOT IN (SELECT p_id FROM marketing_camp)
+)
+
+SELECT 'Marketing-Campaigns' AS sales_type, avg_quantity_sold FROM MarketingAvg
+UNION ALL
+SELECT 'Non-Marketing-Campaigns' AS sales_type, avg_quantity_sold FROM NonMarketingAvg;
+
+/*9. Compare the revenue generated by products inside the marketing campaigns to outside the campaigns*/
+
+WITH MarketingRevenue AS (
+    SELECT round(SUM(t.Qty * sc.price),2) AS total_revenue
+    FROM Transactions t
+    JOIN sus_clothing sc ON t.p_id = sc.p_id
+    JOIN marketing_camp mc ON t.p_id = mc.p_id
+)
+
+, NonMarketingRevenue AS (
+    SELECT round(SUM(t.Qty * sc.price),2) AS total_revenue
+    FROM transactions t
+    JOIN sus_clothing sc ON t.p_id = sc.p_id
+    WHERE t.p_id NOT IN (SELECT p_id FROM marketing_camp)
+)
+	
+SELECT 'Marketing-Campaign' AS campaign_type, total_revenue FROM MarketingRevenue
+UNION ALL
+SELECT 'Non-Marketing-Campaign' AS campaign_type, total_revenue FROM NonMarketingRevenue;
                           
 /*10. Rank the products by their average daily quantity sold*/
+
 WITH DailyQuantity AS (
     SELECT
         s.p_id,
