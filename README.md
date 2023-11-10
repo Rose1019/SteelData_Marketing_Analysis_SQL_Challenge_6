@@ -1,7 +1,7 @@
 # Marketing-Analysis-SQL - CHALLENGE 6
 
 ### Introduction
-You are a Marketing Analyst.The 'Sustainable Clothing Co.' 
+You are a Marketing Analyst.The 'Sustainable Clothing Co.'  
 have been running several marketing campaigns and have asked you to provide your insight into whether they have been successful or not.   
 Analyse the following data and answer the questions to form your answer.
 
