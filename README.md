@@ -329,6 +329,6 @@ All 20 products have been ranked based on their respective average daily quantit
                             Concepts learned
 1.CTE
 2.JOIN
-3.WINDOWS FUNCTION : RANK90 AND DENSE_RANK()
+3.WINDOWS FUNCTION : RANK() AND DENSE_RANK()
 ```
 -----------------------------------------------------------------------------------------------------
